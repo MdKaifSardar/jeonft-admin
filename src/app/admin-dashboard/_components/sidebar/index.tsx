@@ -113,10 +113,13 @@ const Sidebar: React.FC = () => {
 
   const sidebarItems = [
     { path: "users", name: "User Management", icon: <UserIcon /> },
-    { path: "wallet", name: "Wallet Management", icon: <WalletIcon /> },
+    { path: "admin-wallet", name: "Wallet Management", icon: <WalletIcon /> },
     { path: "revenue", name: "Total Revenue", icon: <RevenueIcon /> },
     { path: "nft-upload", name: "NFT Upload", icon: <NFTIcon /> },
-    { path: "collection-upload", name: "Collection Upload", icon: <CollectionIcon /> }, // Added Collection Upload
+    { path: "collection-upload", name: "Collection Upload", icon: <CollectionIcon /> },
+    // Added deposits and withdraws links using NFTIcon
+    { path: "deposits", name: "Deposits", icon: <NFTIcon /> },
+    { path: "withdraws", name: "Withdraws", icon: <NFTIcon /> },
   ];
 
   const NavItem: React.FC<{

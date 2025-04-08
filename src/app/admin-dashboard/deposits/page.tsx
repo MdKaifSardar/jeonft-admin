@@ -1,16 +1,17 @@
 "use client"
+
 import React from "react";
-import AdminWallet from "@/components/AdminWallet";
+import DepositComponent from "@/components/DepositComponent";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-const AdminWalletPage = () => {
+const DepositsPage = () => {
   return (
-    <div className="p-4">
-      <AdminWallet />
+    <>
+      <DepositComponent />
       <ToastContainer />
-    </div>
+    </>
   );
 };
 
-export default AdminWalletPage;
+export default DepositsPage;

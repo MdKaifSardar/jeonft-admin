@@ -7,7 +7,7 @@ interface RevenueData {
   month?: string;
   revenue: number;
 }
-
+                                                                                         
 interface SalesData {
   category: string;
   percentage: number;
@@ -120,34 +120,6 @@ const Revenue: React.FC = () => {
             </div>
           </div>
         ))}
-      </div>
-
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex justify-between items-center">
-            <div>
-              <h3 className="text-lg font-medium text-blue-900">
-                Revenue Overview
-              </h3>
-              <p className="text-sm text-blue-600">
-                Gross marketplace sales over time
-              </p>
-            </div>
-            <div>
-              <select
-                value={timeframe}
-                onChange={(e: ChangeEvent<HTMLSelectElement>) =>
-                  setTimeframe(e.target.value as "daily" | "monthly")
-                }
-                className="block pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-              >
-                <option value="daily">Last 7 Days</option>
-                <option value="monthly">Last 6 Months</option>
-              </select>
-            </div>
-          </div>
-        </div>
-        <div className="p-6">{renderChart()}</div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
