@@ -30,7 +30,7 @@ export default function RootLayout({
       >
         <div className="flex flex-row h-fit bg-gray-50">
           <Sidebar />
-          <main className="w-full h-full">{children}</main>
+          <main className="mt-[3rem] w-full h-full">{children}</main>
         </div>
       </body>
     </html>

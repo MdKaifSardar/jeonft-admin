@@ -9,6 +9,7 @@ import { verifyToken } from "@/utils/jwt";
 import { getCookie } from "cookies-next";
 import { hashPassword } from "@/utils/bcrypt";
 import mongoose from "mongoose";
+import Reward from "../models/rewardModel";
 
 const serializeUser = (user: any) => {
   if (!user) return null;
@@ -44,7 +45,7 @@ export const createUser = async (userData: Partial<IUser>) => {
 export const getUserById = async (userId: string) => {
   try {
     await connectToDatabase();
-    const user = await User.findById(userId).populate("walletId");
+    const user = await User.findById(userId);
     if (!user) {
       return { success: false, error: "User not found." };
     }
@@ -387,5 +388,56 @@ export const getAllUsers = async () => {
   } catch (error) {
     console.error("Error fetching users:", error);
     return { success: false, error: "Failed to fetch users" };
+  }
+};
+
+export const addRewardToUserBalance = async (
+  userId: string,
+  rewardAmount: number,
+  rewardId: string
+) => {
+  try {
+    await connectToDatabase();
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return { success: false, message: "Invalid user ID" };
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(rewardId)) {
+      return { success: false, message: "Invalid reward ID" };
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return { success: false, message: "User not found" };
+    }
+
+    const reward = await Reward.findById(rewardId);
+    if (!reward) {
+      return { success: false, message: "Reward not found" };
+    }
+
+    if (reward.status === "received") {
+      return { success: false, message: "Reward already received" };
+    }
+
+    // ✅ Update user's actual balance field (not totalBalance)
+    user.balance = (user.balance || 0) + rewardAmount;
+    await user.save();
+
+    // Mark reward as received
+    reward.status = "received";
+    await reward.save();
+
+    return {
+      success: true,
+      message: "Balance updated and reward marked as received",
+    };
+  } catch (error: any) {
+    console.error("Error updating user balance and reward status:", error);
+    return {
+      success: false,
+      message: error.message || "Internal Server Error",
+    };
   }
 };
