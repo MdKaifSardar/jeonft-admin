@@ -25,7 +25,11 @@ export const createDeposit = async (userId: string, amount: number) => {
     }
 
     const adminWalletResponse = await getFirstAdminWallet();
-    if (!adminWalletResponse.success || !Array.isArray(adminWalletResponse.data) || !adminWalletResponse.data[0]?.wallet) {
+    if (
+      !adminWalletResponse.success ||
+      !Array.isArray(adminWalletResponse.data) ||
+      !adminWalletResponse.data[0]?.wallet
+    ) {
       return { success: false, message: "Admin wallet address not configured" };
     }
 
@@ -35,6 +39,7 @@ export const createDeposit = async (userId: string, amount: number) => {
       walletId: userResponse.user.walletId,
       adminWalletAddress: adminWalletResponse.data[0].wallet, // Use fetched admin wallet address
       state: "pending",
+      withdrawn: false, // Add withdrawn field
     }) as any;
 
     await deposit.save();
@@ -86,7 +91,9 @@ export const allowDeposit = async (depositId: string) => {
     deposit.state = "completed";
     await deposit.save();
     // Add deposit amount to user's balance
-    await User.findByIdAndUpdate(deposit.userId.toString(), { $inc: { balance: deposit.amount } });
+    await User.findByIdAndUpdate(deposit.userId.toString(), {
+      $inc: { balance: deposit.amount },
+    });
     return { success: true, message: "Deposit approved and balance updated" };
   } catch (error: any) {
     console.error("Error in allowDeposit:", error);
