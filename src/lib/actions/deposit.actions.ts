@@ -23,11 +23,16 @@ export const createDeposit = async (userId: string, amount: number) => {
       return { success: false, message: "No wallet connected" };
     }
 
+    const adminWalletResponse = await getFirstAdminWallet();
+    if (!adminWalletResponse.success || !Array.isArray(adminWalletResponse.data) || !adminWalletResponse.data[0]?.wallet) {
+      return { success: false, message: "Admin wallet address not configured" };
+    }
+
     const deposit = new Deposit({
       amount,
       userId: new mongoose.Types.ObjectId(userId),
       walletId: userResponse.user.walletId,
-      adminWalletAddress: process.env.NEXT_PUBLIC_ADMIN_WALLET_ADDRESS,
+      adminWalletAddress: adminWalletResponse.data[0].wallet, // Use fetched admin wallet address
       state: "pending",
     }) as any;
 
@@ -39,7 +44,7 @@ export const createDeposit = async (userId: string, amount: number) => {
       data: {
         depositId: deposit._id.toString(),
         amount,
-        adminWalletAddress: process.env.NEXT_PUBLIC_ADMIN_WALLET_ADDRESS,
+        adminWalletAddress: adminWalletResponse.data[0].wallet, // Return fetched admin wallet address
       },
     };
   } catch (error: any) {

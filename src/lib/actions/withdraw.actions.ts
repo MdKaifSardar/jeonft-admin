@@ -14,7 +14,6 @@ export const createWithdraw = async (
   try {
     await connectToDatabase();
 
-    // Validate provided IDs.
     if (!mongoose.Types.ObjectId.isValid(depositId)) {
       return { success: false, message: "Invalid deposit ID." };
     }
@@ -25,28 +24,31 @@ export const createWithdraw = async (
       return { success: false, message: "Invalid wallet ID." };
     }
 
-    // Check if a withdraw already exists for the given depositId.
-    const existingWithdraw = await Withdraw.findOne({ depositId: depositId });
-    if (existingWithdraw) {
-      return { success: false, message: "Withdraw already exists for this deposit." };
+    const adminWalletResponse = await getFirstAdminWallet();
+    const adminWallet = Array.isArray(adminWalletResponse.data)
+      ? adminWalletResponse.data[0]
+      : adminWalletResponse.data;
+    if (!adminWalletResponse.success || !adminWallet?.walletAddress) {
+      return { success: false, message: "Admin wallet address not configured" };
     }
 
-    const adminWalletAddress = process.env.NEXT_PUBLIC_ADMIN_WALLET_ADDRESS;
-    if (!adminWalletAddress) {
+    const existingWithdraw = await Withdraw.findOne({ depositId: depositId });
+    if (existingWithdraw) {
       return {
         success: false,
-        message: "Admin wallet address not configured in environment.",
+        message: "Withdraw already exists for this deposit.",
       };
     }
 
     const withdraw = new Withdraw({
-      amount, // Set amount equal to deposit's amount.
+      amount,
       userId: new mongoose.Types.ObjectId(userId),
       walletId: new mongoose.Types.ObjectId(walletId),
-      adminWalletAddress,
+      adminWalletAddress: adminWallet.walletAddress, // Use fetched admin wallet address
       state: "pending",
       depositId: new mongoose.Types.ObjectId(depositId),
-    }) as Document<unknown, object, IWithdraw> & IWithdraw & { _id: mongoose.Types.ObjectId };
+    }) as Document<unknown, object, IWithdraw> &
+      IWithdraw & { _id: mongoose.Types.ObjectId };
 
     await withdraw.save();
 
@@ -59,7 +61,10 @@ export const createWithdraw = async (
     };
   } catch (error: any) {
     console.error("Error creating withdraw:", error);
-    return { success: false, message: error.message || "Error creating withdraw." };
+    return {
+      success: false,
+      message: error.message || "Error creating withdraw.",
+    };
   }
 };
 
