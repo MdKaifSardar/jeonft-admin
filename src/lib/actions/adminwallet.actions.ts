@@ -35,6 +35,21 @@ export const deleteAdminWallets = async () => {
   }
 };
 
+// New function to fetch admin wallet details
+export const fetchAdminWallet = async () => {
+  try {
+    await connectToDatabase();
+    const adminWallet = await AdminWallet.findOne({}).lean();
+    if (!adminWallet) {
+      return { success: false, message: "No admin wallet found" };
+    }
+    return { success: true, data: adminWallet };
+  } catch (error: any) {
+    console.error("Error fetching admin wallet:", error);
+    return { success: false, message: error.message || "Unknown error" };
+  }
+};
+
 export const getFirstAdminWallet = async () => {
   try {
     await connectToDatabase();

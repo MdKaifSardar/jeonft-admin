@@ -1,8 +1,8 @@
 "use client"
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Loader from "../Loader";
 import { toast } from "react-toastify";
-import { createAdminWallet, deleteAdminWallets } from "@/lib/actions/adminwallet.actions";
+import { createAdminWallet, deleteAdminWallets, fetchAdminWallet } from "@/lib/actions/adminwallet.actions";
 
 const AdminWallet = () => {
   const [walletData, setWalletData] = useState<{
@@ -12,6 +12,31 @@ const AdminWallet = () => {
   } | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [showModal, setShowModal] = useState<boolean>(false);
+
+  useEffect(() => {
+    const loadWalletDetails = async () => {
+      try {
+        setLoading(true);
+        const result = await fetchAdminWallet();
+        if (result.success && result.data) {
+          const data = Array.isArray(result.data) ? result.data[0] : result.data;
+          const walletInfo = {
+            walletAddress: data?.walletAddress || '',
+            walletBalance: data?.walletBalance || 0,
+            walletNetwork: data?.walletNetwork || ''
+          };
+          setWalletData(walletInfo);
+        } else {
+          toast.info(result.message);
+        }
+      } catch (error: any) {
+        toast.error("Failed to fetch wallet details");
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadWalletDetails();
+  }, []);
 
   const connectWallet = async () => {
     if (!(window as any).ethereum) {
@@ -43,13 +68,7 @@ const AdminWallet = () => {
       const result = await createAdminWallet(account, balance, networkName);
       if (result.success) {
         toast.success(result.message);
-        // Convert the returned data to plain object and set connected wallet data
-        const plainData = JSON.parse(JSON.stringify(result.data));
-        setWalletData({
-          walletAddress: plainData.walletAddress,
-          walletBalance: plainData.walletBalance,
-          walletNetwork: plainData.walletNetwork,
-        });
+        setWalletData(result.data);
       } else {
         toast.error(result.message);
       }
@@ -100,24 +119,32 @@ const AdminWallet = () => {
           </button>
         </div>
       ) : (
-        <button
-          onClick={connectWallet}
-          className="px-4 py-2 bg-blue-600 text-white rounded"
-        >
-          Connect MetaMask as Admin
-        </button>
+        <div>
+          <p className="mb-4 text-gray-600">No admin wallet found. Please connect a new wallet.</p>
+          <button
+            onClick={connectWallet}
+            className="px-4 py-2 bg-blue-600 text-white rounded"
+          >
+            Connect MetaMask as Admin
+          </button>
+        </div>
       )}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+        <div
+          className="fixed inset-0 flex justify-center items-center z-50"
+          style={{ backgroundColor: "rgba(0, 0, 0, 0.8)" }} // Transparent overlay
+        >
           <div className="bg-white p-6 rounded shadow-lg">
             <h3 className="text-lg font-bold mb-4">Confirm Disconnect</h3>
-            <p className="mb-4">Are you sure you want to disconnect the admin wallet?</p>
+            <p className="mb-4">
+              Are you sure you want to disconnect the admin wallet?
+            </p>
             <div className="flex justify-end space-x-4">
               <button
                 onClick={handleConfirmDisconnect}
                 className="px-4 py-2 bg-red-600 text-white rounded"
               >
-                Disconnect
+                Confirm
               </button>
               <button
                 onClick={() => setShowModal(false)}

@@ -16,7 +16,7 @@ const AdminLogin: React.FC = () => {
 
   const handleLogin = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    router.push("/dashboard");
+    router.push("/admin-dashboard");
   };
 
   return (
