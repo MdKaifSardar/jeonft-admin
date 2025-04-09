@@ -6,7 +6,7 @@ interface LoaderProps {
 
 const Loader: React.FC<LoaderProps> = ({ text }) => {
   return (
-    <div className="flex flex-col justify-center items-center h-fit w-full gap-3">
+    <div className="p-[2rem] flex flex-col justify-center items-center h-fit w-full gap-3">
       <svg
         className="animate-spin h-8 w-8 text-blue-600"
         xmlns="http://www.w3.org/2000/svg"

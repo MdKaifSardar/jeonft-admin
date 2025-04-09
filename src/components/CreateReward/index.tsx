@@ -69,7 +69,7 @@ const CreateRewardForm = () => {
       toast.success("Reward created successfully!");
       setAmount(0);
       setSelectedUserId("");
-      fetchRewards(); // re-fetch rewards after creation
+      fetchRewards();
     } else {
       toast.error(result.message || "Something went wrong");
     }
@@ -90,15 +90,17 @@ const CreateRewardForm = () => {
   };
 
   return (
-    <div className="p-6 bg-white rounded-xl shadow-md md:w-[70%] w-full mx-auto space-y-6">
-      <h2 className="text-2xl font-bold">Create Reward</h2>
+    <div className="p-6 bg-white rounded-lg shadow-md">
+      <h2 className="text-2xl font-bold mb-4 text-blue-900">Create Reward</h2>
 
-      <div>
-        <label className="block mb-1 font-medium">Select User</label>
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-blue-900 mb-1">
+          Select User
+        </label>
         <select
           value={selectedUserId}
           onChange={(e) => setSelectedUserId(e.target.value)}
-          className="w-full border border-gray-300 rounded-lg p-2"
+          className="w-full p-3 border border-blue-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         >
           <option value="">-- Select User --</option>
           {users.map((user) => (
@@ -109,13 +111,15 @@ const CreateRewardForm = () => {
         </select>
       </div>
 
-      <div>
-        <label className="block mb-1 font-medium">Reward Amount (ETH)</label>
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-blue-900 mb-1">
+          Reward Amount (ETH)
+        </label>
         <input
           type="number"
           value={amount}
           onChange={(e) => setAmount(Number(e.target.value))}
-          className="w-full border border-gray-300 rounded-lg p-2"
+          className="w-full p-3 border border-blue-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           placeholder="Enter amount"
         />
       </div>
@@ -123,58 +127,54 @@ const CreateRewardForm = () => {
       <button
         onClick={handleSubmit}
         disabled={loading}
-        className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
+        className={`w-full flex justify-center items-center p-3 border border-transparent rounded-md shadow-sm text-white bg-blue-800 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+          loading ? "opacity-75 cursor-not-allowed" : ""
+        }`}
       >
         {loading ? "Creating..." : "Create Reward"}
       </button>
 
-      <hr className="my-4" />
+      <hr className="my-6" />
 
-      <div>
-        <h3 className="text-lg font-semibold mb-2">All Rewards</h3>
-        {rewards.length === 0 ? (
-          <p className="text-gray-500">No rewards found.</p>
-        ) : (
-          <ul className="space-y-2">
-            {rewards.map((reward) => (
-              <li
-                key={reward._id}
-                className="bg-gray-100 p-3 rounded-md shadow-sm flex justify-between items-center"
+      <h3 className="text-lg font-semibold mb-4 text-blue-900">All Rewards</h3>
+      {rewards.length === 0 ? (
+        <p className="text-gray-500">No rewards found.</p>
+      ) : (
+        <ul className="space-y-4">
+          {rewards.map((reward) => (
+            <li
+              key={reward._id}
+              className="bg-gray-50 p-4 rounded-md shadow-sm flex justify-between items-center"
+            >
+              <div>
+                <p className="text-blue-900 font-medium">{reward.user.username}</p>
+                <p className="text-sm text-gray-600">
+                  Reward: {reward.amount} ETH
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setRewardToDelete(reward);
+                  setShowDeleteModal(true);
+                }}
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition"
               >
-                <div>
-                  <div className="font-medium">{reward.user.username}</div>
-                  <div className="text-sm text-gray-600">
-                    Reward: {reward.amount} ETH
-                  </div>
-                </div>
-                <button
-                  onClick={() => {
-                    setRewardToDelete(reward);
-                    setShowDeleteModal(true);
-                  }}
-                  className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition"
-                >
-                  Delete
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+                Delete
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
 
-      {/* Delete Confirmation Modal */}
       {showDeleteModal && rewardToDelete && (
         <div className="fixed inset-0 bg-gray-500/80 backdrop-blur-sm flex justify-center items-center">
-          <div className="bg-white rounded-xl p-6 max-w-sm w-full space-y-4">
-            <h3 className="text-xl font-semibold">Confirm Delete</h3>
-            <p>
+          <div className="bg-white rounded-lg p-6 shadow-md">
+            <h3 className="text-lg font-bold mb-4 text-blue-900">Confirm Delete</h3>
+            <p className="mb-4 text-gray-700">
               Are you sure you want to delete the reward of{" "}
               <span className="font-medium">{rewardToDelete.amount} ETH</span>{" "}
               for user{" "}
-              <span className="font-medium">
-                {rewardToDelete.user.username}
-              </span>
-              ?
+              <span className="font-medium">{rewardToDelete.user.username}</span>?
             </p>
             <div className="flex justify-end space-x-4">
               <button
@@ -182,7 +182,7 @@ const CreateRewardForm = () => {
                   setShowDeleteModal(false);
                   setRewardToDelete(null);
                 }}
-                className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 transition"
+                className="px-4 py-2 bg-gray-300 text-black rounded hover:bg-gray-400 transition"
               >
                 Cancel
               </button>

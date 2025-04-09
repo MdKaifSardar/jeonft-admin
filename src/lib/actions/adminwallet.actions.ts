@@ -10,13 +10,19 @@ export const createAdminWallet = async (
 ) => {
   try {
     await connectToDatabase();
-    const existing = await AdminWallet.findOne({ walletAddress });
+    const existing = await AdminWallet.findOne({ walletAddress }).lean(); // Convert to plain object
     if (existing) {
       return { success: true, message: "Wallet already exists", data: existing };
     }
-    const adminWallet = new AdminWallet({ walletAddress, walletBalance, walletNetwork, connected: true });
+    const adminWallet = new AdminWallet({
+      walletAddress,
+      walletBalance,
+      walletNetwork,
+      connected: true,
+    });
     await adminWallet.save();
-    return { success: true, message: "Admin wallet created successfully", data: adminWallet };
+    const plainData = adminWallet.toObject(); // Convert to plain object
+    return { success: true, message: "Admin wallet created successfully", data: plainData };
   } catch (error: any) {
     console.error("Error creating admin wallet:", error);
     return { success: false, message: error.message };
@@ -39,7 +45,7 @@ export const deleteAdminWallets = async () => {
 export const fetchAdminWallet = async () => {
   try {
     await connectToDatabase();
-    const adminWallet = await AdminWallet.findOne({}).lean();
+    const adminWallet = await AdminWallet.findOne({}).lean(); // Convert to plain object
     if (!adminWallet) {
       return { success: false, message: "No admin wallet found" };
     }
