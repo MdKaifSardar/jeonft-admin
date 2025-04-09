@@ -4,6 +4,7 @@ import { connectToDatabase } from "../database/db";
 import User from "../models/userModel";
 import Withdraw, { IWithdraw } from "../models/withdrawModel";
 import mongoose, { Document } from "mongoose";
+import { getFirstAdminWallet } from "./adminwallet.actions";
 
 export const createWithdraw = async (
   depositId: string,

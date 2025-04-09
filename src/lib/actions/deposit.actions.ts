@@ -3,6 +3,7 @@
 import { connectToDatabase } from "../database/db";
 import Deposit from "../models/depositModel";
 import User from "../models/userModel";
+import { getFirstAdminWallet } from "./adminwallet.actions";
 import { getUserDetails } from "./user.actions";
 import mongoose from "mongoose";
 
