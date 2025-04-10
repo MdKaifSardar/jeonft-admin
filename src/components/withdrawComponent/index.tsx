@@ -5,6 +5,7 @@ import Loader from "@/components/Loader";
 import { getAllWithdraws, allowWithdraw, rejectWithdraw } from "@/lib/actions/withdraw.actions";
 import { toast } from "react-toastify";
 import { getWalletAddressById } from "@/lib/actions/wallet.actions"; // added import
+import { convertRsToEth } from "@/lib/actions/user.actions";
 
 interface Withdraw {
   _id: string;
@@ -12,6 +13,7 @@ interface Withdraw {
   state: string;
   userId: string;       // added userId if needed
   walletId: string;     // used to fetch recipient wallet address
+  unit?: string;        // added unit field
   // ...other fields...
 }
 
@@ -44,42 +46,53 @@ const WithdrawComponent = () => {
 
   const confirmAction = async () => {
     if (!selectedWithdrawId || !modalType) return;
+
     if (modalType === "allow") {
-      // Find the selected withdraw record to get transfer details
       const selectedWithdraw = withdraws.find((wd) => wd._id === selectedWithdrawId);
       if (!selectedWithdraw) {
         toast.error("Withdraw not found");
         return;
       }
+
       try {
         if (!(window as any).ethereum) {
           toast.error("MetaMask not found");
           return;
         }
-        // Request admin account from MetaMask
+
         const accounts = await (window as any).ethereum.request({ method: "eth_requestAccounts" });
         const adminAccount = accounts[0];
-        // Fetch recipient wallet address from the wallet action using the walletId from the withdraw record
+
         const walletResponse = await getWalletAddressById(selectedWithdraw.walletId);
         if (!walletResponse.success || !walletResponse.data) {
           toast.error("Failed to fetch recipient wallet address: " + walletResponse.message);
           return;
         }
+
         const recipientWalletAddress = walletResponse.data.walletAddress;
-        // Convert the withdraw amount (assumed in ethers) into wei (hex string)
-        const amountInWeiHex = "0x" + (selectedWithdraw.amount * 1e18).toString(16);
+
+        let amountToSend = selectedWithdraw.amount;
+
+        // Convert amount to ETH if the unit is "rs"
+        if (selectedWithdraw.unit === "rs") {
+          amountToSend = await convertRsToEth(selectedWithdraw.amount);
+        }
+
+        const amountInWeiHex = "0x" + (amountToSend * 1e18).toString(16);
+
         const txParams = {
           from: adminAccount,
           to: recipientWalletAddress,
           value: amountInWeiHex,
         };
-        // Execute the transfer via MetaMask
+
         const txHash = await (window as any).ethereum.request({
           method: "eth_sendTransaction",
           params: [txParams],
         });
+
         toast.success("Transfer successful. Tx: " + txHash);
-        // Now, call allowWithdraw to update state after successful transfer
+
         const result = await allowWithdraw(selectedWithdrawId);
         if (result.success) {
           toast.success(result.message);
@@ -97,9 +110,9 @@ const WithdrawComponent = () => {
         toast.error(result.message);
       }
     }
+
     setModalType(null);
     setSelectedWithdrawId(null);
-    // Refresh the withdraws list
     fetchWithdraws();
   };
 
@@ -125,6 +138,7 @@ const WithdrawComponent = () => {
             <th className="px-4 py-2 border border-gray-300 text-white text-center">ID</th>
             <th className="px-4 py-2 border border-gray-300 text-white text-center">User ID</th>
             <th className="px-4 py-2 border border-gray-300 text-white text-center">Amount</th>
+            <th className="px-4 py-2 border border-gray-300 text-white text-center">Unit</th> {/* New column */}
             <th className="px-4 py-2 border border-gray-300 text-white text-center">State</th>
             <th className="px-4 py-2 border border-gray-300 text-white text-center">Actions</th>
           </tr>
@@ -135,6 +149,7 @@ const WithdrawComponent = () => {
               <td className="px-4 py-2 border border-gray-300 text-center">{wd._id}</td>
               <td className="px-4 py-2 border border-gray-300 text-center">{wd.userId}</td>
               <td className="px-4 py-2 border border-gray-300 text-center">{wd.amount}</td>
+              <td className="px-4 py-2 border border-gray-300 text-center">{wd.unit}</td> {/* New cell */}
               <td className="px-4 py-2 border border-gray-300 text-center">{wd.state}</td>
               <td className="px-4 py-2 border border-gray-300 text-center">
                 {wd.state === "pending" ? (

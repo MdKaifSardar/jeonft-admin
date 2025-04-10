@@ -7,6 +7,7 @@ export interface IWithdraw extends Document {
   adminWalletAddress: string;
   state: "pending" | "completed" | "failed";
   depositId: mongoose.Types.ObjectId;
+  unit: "eth" | "rs"; // Add unit field
   createdAt: Date;
 }
 
@@ -17,6 +18,7 @@ const WithdrawSchema = new Schema<IWithdraw>({
   adminWalletAddress: { type: String, required: true },
   state: { type: String, enum: ["pending", "completed", "failed"], default: "pending" },
   depositId: { type: Schema.Types.ObjectId, ref: 'Deposit', required: true },
+  unit: { type: String, enum: ["eth", "rs"], required: true }, // Add unit field
   createdAt: { type: Date, default: Date.now }
 });
 

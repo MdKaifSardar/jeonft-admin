@@ -15,6 +15,7 @@ interface Deposit {
   adminWalletAddress: string;
   state: string;
   userId: string; // added userId field
+  unit: string; // added unit field
   // ...other fields...
 }
 
@@ -107,7 +108,10 @@ const DepositComponent = () => {
             <th className="px-4 py-2 border border-gray-300 text-white text-center">
               Amount
             </th>
-            {/* <th className="px-4 py-2 border border-gray-300 text-white text-center">Admin Wallet</th> */}
+            <th className="px-4 py-2 border border-gray-300 text-white text-center">
+              Unit
+            </th>{" "}
+            {/* New column */}
             <th className="px-4 py-2 border border-gray-300 text-white text-center">
               State
             </th>
@@ -129,7 +133,10 @@ const DepositComponent = () => {
               <td className="px-4 py-2 border border-gray-300 text-center">
                 {dep.amount}
               </td>
-              {/* <td className="px-4 py-2 border border-gray-300 text-center">{dep.adminWalletAddress}</td> */}
+              <td className="px-4 py-2 border border-gray-300 text-center">
+                {dep.unit}
+              </td>{" "}
+              {/* New cell */}
               <td className="px-4 py-2 border border-gray-300 text-center">
                 {dep.state}
               </td>

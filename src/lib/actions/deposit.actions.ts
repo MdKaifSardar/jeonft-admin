@@ -7,11 +7,7 @@ import { getFirstAdminWallet } from "./adminwallet.actions";
 import { convertRsToEth, getUserDetails } from "./user.actions";
 import mongoose from "mongoose";
 
-export const createDeposit = async (
-  userId: string,
-  amount: number,
-  unit: "eth" | "rs"
-) => {
+export const createDeposit = async (userId: string, amount: number, unit: "eth" | "rs") => {
   try {
     await connectToDatabase();
 
@@ -29,31 +25,20 @@ export const createDeposit = async (
     }
 
     const adminWalletResponse = await getFirstAdminWallet();
-    if (
-      !adminWalletResponse.success ||
-      !Array.isArray(adminWalletResponse.data) ||
-      !adminWalletResponse.data[0]?.wallet
-    ) {
+    if (!adminWalletResponse.success || !adminWalletResponse.data || 
+        (Array.isArray(adminWalletResponse.data) && !adminWalletResponse.data[0]?.walletAddress) ||
+        (!Array.isArray(adminWalletResponse.data) && !adminWalletResponse.data.walletAddress)) {
       return { success: false, message: "Admin wallet address not configured" };
     }
 
-    // Convert amount to ETH if the unit is 'rs'
-    let amountInEth = amount;
-    if (unit === "rs") {
-      amountInEth = await convertRsToEth(amount);
-      if (!amountInEth || amountInEth <= 0) {
-        return { success: false, message: "Failed to convert INR to ETH" };
-      }
-    }
-
     const deposit = new Deposit({
-      amount: amountInEth,
+      amount, // Save the amount as provided
       userId: new mongoose.Types.ObjectId(userId),
       walletId: userResponse.user.walletId,
-      adminWalletAddress: adminWalletResponse.data[0].wallet,
+      adminWalletAddress: Array.isArray(adminWalletResponse.data) ? adminWalletResponse.data[0].walletAddress : adminWalletResponse.data.walletAddress,
       state: "pending",
       withdrawn: false,
-      unit: "eth", // Always store the unit as 'eth' after conversion
+      unit, // Save the unit as provided (eth or rs)
     }) as any;
 
     await deposit.save();
@@ -63,8 +48,9 @@ export const createDeposit = async (
       message: "Deposit initiated successfully",
       data: {
         depositId: deposit._id.toString(),
-        amount: amountInEth,
-        adminWalletAddress: adminWalletResponse.data[0].wallet,
+        amount,
+        unit, // Return the unit as provided
+        adminWalletAddress: Array.isArray(adminWalletResponse.data) ? adminWalletResponse.data[0].walletAddress : adminWalletResponse.data.walletAddress,
       },
     };
   } catch (error: any) {
@@ -138,10 +124,19 @@ export const allowDeposit = async (depositId: string) => {
     // Update deposit state to completed instead of deleting it
     deposit.state = "completed";
     await deposit.save();
-    // Add deposit amount to user's balance
+
+    let amountToAdd = deposit.amount;
+
+    // Convert amount to ETH if the unit is "rs"
+    if (deposit.unit === "rs") {
+      amountToAdd = await convertRsToEth(deposit.amount);
+    }
+
+    // Add deposit amount (converted if necessary) to user's balance
     await User.findByIdAndUpdate(deposit.userId.toString(), {
-      $inc: { balance: deposit.amount },
+      $inc: { balance: amountToAdd },
     });
+
     return { success: true, message: "Deposit approved and balance updated" };
   } catch (error: any) {
     console.error("Error in allowDeposit:", error);

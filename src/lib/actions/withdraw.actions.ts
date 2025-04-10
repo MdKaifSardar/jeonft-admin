@@ -5,12 +5,14 @@ import User from "../models/userModel";
 import Withdraw, { IWithdraw } from "../models/withdrawModel";
 import mongoose, { Document } from "mongoose";
 import { getFirstAdminWallet } from "./adminwallet.actions";
+import { convertRsToEth } from "./user.actions";
 
 export const createWithdraw = async (
   depositId: string,
   userId: string,
   walletId: string,
-  amount: number
+  amount: number,
+  unit: "eth" | "rs" // Accept unit as a parameter
 ) => {
   try {
     await connectToDatabase();
@@ -18,6 +20,7 @@ export const createWithdraw = async (
     if (!mongoose.Types.ObjectId.isValid(depositId)) {
       return { success: false, message: "Invalid deposit ID." };
     }
+
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       return { success: false, message: "Invalid user ID." };
     }
@@ -34,22 +37,22 @@ export const createWithdraw = async (
     }
 
     const existingWithdraw = await Withdraw.findOne({ depositId: depositId });
-    if (existingWithdraw) {
+    if (existingWithdraw && existingWithdraw.state !== "failed") {
       return {
         success: false,
-        message: "Withdraw already exists for this deposit.",
+        message: "A withdraw already exists for this deposit and is not failed.",
       };
     }
 
     const withdraw = new Withdraw({
-      amount,
+      amount, // Use the amount passed as a parameter
+      unit, // Use the unit passed as a parameter
       userId: new mongoose.Types.ObjectId(userId),
       walletId: new mongoose.Types.ObjectId(walletId),
       adminWalletAddress: adminWallet.walletAddress, // Use fetched admin wallet address
       state: "pending",
       depositId: new mongoose.Types.ObjectId(depositId),
-    }) as Document<unknown, object, IWithdraw> &
-      IWithdraw & { _id: mongoose.Types.ObjectId };
+    }) as Document<unknown, object, IWithdraw> & IWithdraw & { _id: mongoose.Types.ObjectId };
 
     await withdraw.save();
 
@@ -62,10 +65,7 @@ export const createWithdraw = async (
     };
   } catch (error: any) {
     console.error("Error creating withdraw:", error);
-    return {
-      success: false,
-      message: error.message || "Error creating withdraw.",
-    };
+    return { success: false, message: error.message || "Error creating withdraw." };
   }
 };
 
@@ -114,24 +114,50 @@ export const allowWithdraw = async (withdrawId: string) => {
     if (!withdraw) {
       return { success: false, message: "Withdraw not found" };
     }
+
     // Check if user exists from the userId stored in the withdraw record.
     const user = await User.findById(withdraw.userId);
     if (!user) {
       return { success: false, message: "User not found" };
     }
-    // Deduct the withdraw amount from the user's balance and totalBalance.
-    user.balance = (user.balance || 0) - withdraw.amount;
-    user.totalBalance = (user.totalBalance || 0) - withdraw.amount;
+
+    let amountToDeduct = withdraw.amount;
+
+    // Convert amount to ETH if the unit is "rs"
+    if (withdraw.unit === "rs") {
+      amountToDeduct = await convertRsToEth(withdraw.amount);
+    }
+
+    // Deduct the withdraw amount (converted if necessary) from the user's balance and totalBalance.
+    user.balance = (user.balance || 0) - amountToDeduct;
+    user.totalBalance = (user.totalBalance || 0) - amountToDeduct;
+
     // If balance becomes zero, set totalIncome and referralIncome to zero.
     if (user.balance <= 0) {
       user.balance = 0;
       user.incomeAmount = 0;
       user.referralIncome = 0;
     }
+
     await user.save();
+
     // Set withdraw state to "completed"
     withdraw.state = "completed";
     await withdraw.save();
+
+    // Update the corresponding deposit's withdrawn field to true
+    try {
+      const deposit = await mongoose.model("Deposit").findById(withdraw.depositId);
+      if (!deposit) {
+        throw new Error("Associated deposit not found");
+      }
+      deposit.withdrawn = true;
+      await deposit.save();
+    } catch (error: any) {
+      console.error("Error updating deposit withdrawn field:", error);
+      return { success: false, message: "Failed to update deposit withdrawn field." };
+    }
+
     return { success: true, message: "Withdraw approved and processed" };
   } catch (error: any) {
     console.error("Error in allowWithdraw:", error);
