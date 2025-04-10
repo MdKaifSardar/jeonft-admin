@@ -9,6 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@types/axios": "^0.14.4",
+    "axios": "^1.8.4",
     "bcryptjs": "^3.0.2",
     "cloudinary": "^2.6.0",
     "cookies-next": "^5.1.0",

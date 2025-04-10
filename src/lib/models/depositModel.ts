@@ -7,6 +7,7 @@ export interface IDeposit extends Document {
   adminWalletAddress: string;
   state: "pending" | "completed" | "failed";
   withdrawn: boolean;
+  unit: "eth" | "rs";
   createdAt: Date;
 }
 
@@ -17,6 +18,7 @@ const DepositSchema = new Schema<IDeposit>({
   adminWalletAddress: { type: String, required: true },
   state: { type: String, enum: ["pending", "completed", "failed"], default: "pending" },
   withdrawn: { type: Boolean, default: false }, // Add withdrawn field
+  unit: { type: String, enum: ["eth", "rs"], required: true }, // Add unit field
   createdAt: { type: Date, default: Date.now }
 });
 

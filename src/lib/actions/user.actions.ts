@@ -10,6 +10,7 @@ import { getCookie } from "cookies-next";
 import { hashPassword } from "@/utils/bcrypt";
 import mongoose from "mongoose";
 import Reward from "../models/rewardModel";
+import axios from "axios";
 
 const serializeUser = (user: any) => {
   if (!user) return null;
@@ -439,5 +440,43 @@ export const addRewardToUserBalance = async (
       success: false,
       message: error.message || "Internal Server Error",
     };
+  }
+};
+
+const getLiveEthereumValueInINR = async (): Promise<number> => {
+  try {
+    const response = await axios.get(
+      "https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=inr"
+    );
+    const ethToInr = response.data.ethereum.inr;
+    if (!ethToInr) {
+      throw new Error("Failed to fetch Ethereum value in INR.");
+    }
+    return ethToInr;
+  } catch (error) {
+    console.error("Error fetching live Ethereum value:", error);
+    throw new Error("Unable to fetch live Ethereum value.");
+  }
+};
+
+export const convertRsToEth = async (amountInRs: number): Promise<number> => {
+  try {
+    const ethToInr = await getLiveEthereumValueInINR();
+    const amountInEth = amountInRs / ethToInr;
+    return parseFloat(amountInEth.toFixed(8)); // Return up to 8 decimal places
+  } catch (error) {
+    console.error("Error converting INR to ETH:", error);
+    throw new Error("Conversion from INR to ETH failed.");
+  }
+};
+
+export const convertEthToRs = async (amountInEth: number): Promise<number> => {
+  try {
+    const ethToInr = await getLiveEthereumValueInINR();
+    const amountInRs = amountInEth * ethToInr;
+    return parseFloat(amountInRs.toFixed(2)); // Return up to 2 decimal places
+  } catch (error) {
+    console.error("Error converting ETH to INR:", error);
+    throw new Error("Conversion from ETH to INR failed.");
   }
 };

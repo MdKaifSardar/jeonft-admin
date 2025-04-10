@@ -4,10 +4,14 @@ import { connectToDatabase } from "../database/db";
 import Deposit from "../models/depositModel";
 import User from "../models/userModel";
 import { getFirstAdminWallet } from "./adminwallet.actions";
-import { getUserDetails } from "./user.actions";
+import { convertRsToEth, getUserDetails } from "./user.actions";
 import mongoose from "mongoose";
 
-export const createDeposit = async (userId: string, amount: number) => {
+export const createDeposit = async (
+  userId: string,
+  amount: number,
+  unit: "eth" | "rs"
+) => {
   try {
     await connectToDatabase();
 
@@ -33,13 +37,23 @@ export const createDeposit = async (userId: string, amount: number) => {
       return { success: false, message: "Admin wallet address not configured" };
     }
 
+    // Convert amount to ETH if the unit is 'rs'
+    let amountInEth = amount;
+    if (unit === "rs") {
+      amountInEth = await convertRsToEth(amount);
+      if (!amountInEth || amountInEth <= 0) {
+        return { success: false, message: "Failed to convert INR to ETH" };
+      }
+    }
+
     const deposit = new Deposit({
-      amount,
+      amount: amountInEth,
       userId: new mongoose.Types.ObjectId(userId),
       walletId: userResponse.user.walletId,
-      adminWalletAddress: adminWalletResponse.data[0].wallet, // Use fetched admin wallet address
+      adminWalletAddress: adminWalletResponse.data[0].wallet,
       state: "pending",
-      withdrawn: false, // Add withdrawn field
+      withdrawn: false,
+      unit: "eth", // Always store the unit as 'eth' after conversion
     }) as any;
 
     await deposit.save();
@@ -49,13 +63,47 @@ export const createDeposit = async (userId: string, amount: number) => {
       message: "Deposit initiated successfully",
       data: {
         depositId: deposit._id.toString(),
-        amount,
-        adminWalletAddress: adminWalletResponse.data[0].wallet, // Return fetched admin wallet address
+        amount: amountInEth,
+        adminWalletAddress: adminWalletResponse.data[0].wallet,
       },
     };
   } catch (error: any) {
     console.error("Error creating deposit:", error);
     return { success: false, message: error.message };
+  }
+};
+
+export const getDeposits = async (userId: string) => {
+  try {
+    await connectToDatabase();
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return { success: false, message: "Invalid user ID format." };
+    }
+
+    const deposits = await Deposit.find({ userId: userId })
+      .sort({ createdAt: -1 })
+      .lean(); // Use lean() to convert Mongoose Documents to plain objects
+
+    const plainDeposits = deposits.map((deposit) => ({
+      ...deposit,
+      _id: deposit._id.toString(),
+      userId: deposit.userId.toString(),
+      walletId: deposit.walletId.toString(),
+    }));
+
+    return {
+      success: true,
+      message: "Deposits fetched successfully.",
+      data: plainDeposits, // Ensure plain objects are returned
+    };
+  } catch (error: any) {
+    console.error("Error fetching deposits:", error);
+    return {
+      success: false,
+      message: "An error occurred while fetching deposits.",
+      error: error.message || "Unknown error",
+    };
   }
 };
 

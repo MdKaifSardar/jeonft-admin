@@ -23,12 +23,16 @@ export const signup = async (
     const hashedPassword = await hashPassword(password);
     const userReferralCode = generateReferralCode();
 
+    // Generate referral link
+    const referralLink = `https://jeonftuser.vercel.app/auth/ref-signup/${userReferralCode}`;
+
     const newUser = new User({
       email,
       username,
       password: hashedPassword,
       referralCode,
       userReferralCode,
+      referralLink, // Add referral link
     });
 
     await newUser.save();
