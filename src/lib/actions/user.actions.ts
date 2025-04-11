@@ -322,9 +322,9 @@ export const calculateMLMLevelIncome = async (
 
 export const updateUserBalance = async (
   userId: string,
-  roiIncome: number, // e.g. 1.5 for 1.5%
-  levelIncome: number, // e.g. 8, 5, or 2
-  referralIncome: number // e.g. 30 for 30%
+  roiIncome: number, // e.g., 1.5 for 1.5%
+  levelIncome: number, // e.g., 8, 5, or 2
+  referralIncome: number // e.g., 30 for 30%
 ) => {
   try {
     await connectToDatabase();
