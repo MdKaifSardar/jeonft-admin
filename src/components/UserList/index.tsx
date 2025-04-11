@@ -40,6 +40,7 @@ const UserList = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
+  const [calculatingIncome, setCalculatingIncome] = useState<boolean>(false); // New state for loader
 
   const fetchUsers = async () => {
     try {
@@ -57,6 +58,7 @@ const UserList = () => {
   };
 
   const fetchIncomeDetails = async (users: User[]) => {
+    setCalculatingIncome(true); // Show loader
     const details: Record<string, IncomeDetails> = {};
     for (const user of users) {
       const roiPercentage = 1.5; // ROI percentage
@@ -96,6 +98,7 @@ const UserList = () => {
       };
     }
     setIncomeDetails(details);
+    setCalculatingIncome(false); // Hide loader
   };
 
   const copyToClipboard = (text: string) => {
@@ -145,6 +148,9 @@ const UserList = () => {
                 <strong>Wallet Address:</strong> {user.walletAddress || "N/A"}
               </p>
               <p>
+                <strong>Referral Code:</strong> {user.userReferralCode}
+              </p>
+              <p>
                 <strong>Referral Link:</strong>{" "}
                 <a
                   href={user.referralLink}
@@ -172,33 +178,37 @@ const UserList = () => {
                 <strong>Total Balance:</strong> {user.totalBalance} ETH
               </p>
 
-              {incomeDetails[user._id] && (
-                <>
-                  <h3 className="text-lg font-semibold mt-4 mb-2">
-                    Income Details
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div className="p-4 border border-gray-300 rounded shadow-md">
-                      <h4 className="font-semibold">ROI Income</h4>
-                      <p>{incomeDetails[user._id].roiIncome} ETH</p>
-                      <p>({incomeDetails[user._id].roiPercentage}%)</p>
+              {calculatingIncome ? (
+                <Loader /> // Show loader while calculating incomes
+              ) : (
+                incomeDetails[user._id] && (
+                  <>
+                    <h3 className="text-lg font-semibold mt-4 mb-2">
+                      Income Details
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div className="p-4 border border-gray-300 rounded shadow-md">
+                        <h4 className="font-semibold">ROI Income</h4>
+                        <p>{incomeDetails[user._id].roiIncome} ETH</p>
+                        <p>({incomeDetails[user._id].roiPercentage}%)</p>
+                      </div>
+                      <div className="p-4 border border-gray-300 rounded shadow-md">
+                        <h4 className="font-semibold">Referral Income</h4>
+                        <p>{incomeDetails[user._id].referralIncome} ETH</p>
+                        <p>({incomeDetails[user._id].referralPercentage}%)</p>
+                      </div>
+                      <div className="p-4 border border-gray-300 rounded shadow-md">
+                        <h4 className="font-semibold">Level Income</h4>
+                        <p>{incomeDetails[user._id].levelIncome} ETH</p>
+                        <p>({incomeDetails[user._id].levelPercentage}%)</p>
+                      </div>
+                      <div className="p-4 border border-gray-300 rounded shadow-md">
+                        <h4 className="font-semibold">Total Income</h4>
+                        <p>{incomeDetails[user._id].totalIncome} ETH</p>
+                      </div>
                     </div>
-                    <div className="p-4 border border-gray-300 rounded shadow-md">
-                      <h4 className="font-semibold">Referral Income</h4>
-                      <p>{incomeDetails[user._id].referralIncome} ETH</p>
-                      <p>({incomeDetails[user._id].referralPercentage}%)</p>
-                    </div>
-                    <div className="p-4 border border-gray-300 rounded shadow-md">
-                      <h4 className="font-semibold">Level Income</h4>
-                      <p>{incomeDetails[user._id].levelIncome} ETH</p>
-                      <p>({incomeDetails[user._id].levelPercentage}%)</p>
-                    </div>
-                    <div className="p-4 border border-gray-300 rounded shadow-md">
-                      <h4 className="font-semibold">Total Income</h4>
-                      <p>{incomeDetails[user._id].totalIncome} ETH</p>
-                    </div>
-                  </div>
-                </>
+                  </>
+                )
               )}
             </div>
           )}
